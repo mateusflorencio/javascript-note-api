@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Note = require("../model/note");
 const WithAuth = require("../middlewares/auth");
-const {
-    findById
-} = require('../model/note');
+
 
 router.post("/", WithAuth, async (req, res) => {
     const {
@@ -26,6 +24,30 @@ router.post("/", WithAuth, async (req, res) => {
             error: "Problem to create a new note"
         });
     }
+});
+
+router.get("/search", WithAuth, async (req, res) => {
+    const {
+        query
+    } = req.query;
+
+    try {
+        let notes = await Note
+            .find({
+                author: req.user._id
+            })
+            .find({
+                $text: {
+                    $search: query
+                }
+            });
+        res.json(notes);
+
+    } catch (error) {
+        res.json({
+            error: error
+        }).status(500);
+    };
 });
 
 router.get("/:id", WithAuth, async (req, res) => {
@@ -116,14 +138,14 @@ router.delete("/:id", WithAuth, async (req, res) => {
             res.status(403).json({
                 error: "Permission denied"
             });
-        }
+        };
 
     } catch (error) {
         res.status(500).json({
             error: "Problem to delete a note"
         });
-    }
-})
+    };
+});
 
 const isOwner = (user, note) => {
     if (JSON.stringify(user._id) == JSON.stringify(note.author._id))
